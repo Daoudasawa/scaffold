@@ -1,5 +1,10 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from .views import RecommendationViewSet
 
-app_name = "recommendations"
+router = DefaultRouter()
+router.register(r'alerts/(?P<alert_pk>[^/.]+)/recommendations', RecommendationViewSet, basename='alert-recommendations')
 
-urlpatterns = []
+urlpatterns = [
+    path('', include(router.urls)),
+]
