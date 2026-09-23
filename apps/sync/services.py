@@ -13,17 +13,17 @@ def get_pull_data(user, last_sync_timestamp=None):
     Récupère toutes les données modifiées depuis last_sync_timestamp pour l'éleveur.
     """
     # Pour le MVP, on filtre par propriétaire (Règle RM6)
-    flocks_qs = Flock.objects.filter(farm__owner=user)
+    flocks_qs = Flock.objects.filter(farm__owner=user).select_related("farm")
     
     if last_sync_timestamp:
         flocks_qs = flocks_qs.filter(updated_at__gte=last_sync_timestamp)
-        mortalities = Mortality.objects.filter(flock__farm__owner=user, created_at__gte=last_sync_timestamp)
-        monitorings = DailyMonitoring.objects.filter(flock__farm__owner=user, updated_at__gte=last_sync_timestamp)
-        observations = Observation.objects.filter(flock__farm__owner=user, updated_at__gte=last_sync_timestamp)
+        mortalities = Mortality.objects.filter(flock__farm__owner=user, created_at__gte=last_sync_timestamp).select_related("flock")
+        monitorings = DailyMonitoring.objects.filter(flock__farm__owner=user, updated_at__gte=last_sync_timestamp).select_related("flock")
+        observations = Observation.objects.filter(flock__farm__owner=user, updated_at__gte=last_sync_timestamp).select_related("flock")
     else:
-        mortalities = Mortality.objects.filter(flock__farm__owner=user)
-        monitorings = DailyMonitoring.objects.filter(flock__farm__owner=user)
-        observations = Observation.objects.filter(flock__farm__owner=user)
+        mortalities = Mortality.objects.filter(flock__farm__owner=user).select_related("flock")
+        monitorings = DailyMonitoring.objects.filter(flock__farm__owner=user).select_related("flock")
+        observations = Observation.objects.filter(flock__farm__owner=user).select_related("flock")
 
     # Convert to simple dict representations (in a real app, use serializers)
     data = {

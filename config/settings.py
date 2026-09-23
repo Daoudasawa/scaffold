@@ -8,8 +8,14 @@ from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from django.core.exceptions import ImproperlyConfigured
+
 SECRET_KEY = config("DJANGO_SECRET_KEY", default="dev-only-insecure-key")
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
+
+if not DEBUG and SECRET_KEY == "dev-only-insecure-key":
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY doit être impérativement défini en production lorsque DEBUG=False.")
+
 ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
 if RENDER_EXTERNAL_HOSTNAME:
@@ -83,15 +89,27 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 AUTH_USER_MODEL = "accounts.User"
 
-import dj_database_url
+try:
+    import dj_database_url
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"postgres://{config('DB_USER', default='avicoleguard')}:{config('DB_PASSWORD', default='')}@{config('DB_HOST', default='postgres')}:{config('DB_PORT', default='5432')}/{config('DB_NAME', default='avicoleguard')}",
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=f"postgres://{config('DB_USER', default='avicoleguard')}:{config('DB_PASSWORD', default='')}@{config('DB_HOST', default='postgres')}:{config('DB_PORT', default='5432')}/{config('DB_NAME', default='avicoleguard')}",
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+except ImportError:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="avicoleguard"),
+            "USER": config("DB_USER", default="avicoleguard"),
+            "PASSWORD": config("DB_PASSWORD", default=""),
+            "HOST": config("DB_HOST", default="postgres"),
+            "PORT": config("DB_PORT", default="5432"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -160,6 +178,10 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
     default="http://localhost:4200,http://localhost:3000",
+).split(",") if not DEBUG else []
+CORS_ALLOWED_ORIGIN_REGEXES = config(
+    "CORS_ALLOWED_ORIGIN_REGEXES",
+    default=r"^http://localhost:\d+$,^http://127\.0\.0\.1:\d+$",
 ).split(",") if not DEBUG else []
 
 # --- Logging ---

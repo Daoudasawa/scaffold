@@ -16,7 +16,11 @@ def calculate_mortality_rate(flock, window_days):
     return (dead_count / flock.initial_count) * 100
 
 def run_health_analysis(flock_id):
-    flock = Flock.objects.get(id=flock_id)
+    try:
+        flock = Flock.objects.get(id=flock_id)
+    except Flock.DoesNotExist:
+        return None
+
     if flock.status == Flock.Status.CLOSED:
         return None
         

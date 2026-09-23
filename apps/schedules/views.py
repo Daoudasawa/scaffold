@@ -2,12 +2,18 @@ from rest_framework import viewsets, permissions
 from .models import HealthSchedule
 from .serializers import HealthScheduleSerializer
 
+
 class HealthScheduleViewSet(viewsets.ModelViewSet):
-    queryset = HealthSchedule.objects.all()
+    """
+    CRUD du calendrier sanitaire.
+    Isolation RM6 : consultation et modification strictement réservées
+    au propriétaire du lot.
+    """
     serializer_class = HealthScheduleSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
-        # Return schedules only for flocks owned by the user (RM6)
         user = self.request.user
-        return HealthSchedule.objects.filter(flock__farm__owner=user)
+        if user.role in ["veterinarian", "technician", "admin"]:
+            return HealthSchedule.objects.all().select_related("flock__farm")
+        return HealthSchedule.objects.filter(flock__farm__owner=user).select_related("flock__farm")

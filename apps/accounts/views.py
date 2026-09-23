@@ -21,6 +21,7 @@ class RegisterView(generics.CreateAPIView):
 class MeView(APIView):
     """GET /api/v1/auth/me/ — Profil de l'utilisateur connecté."""
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
